@@ -10,7 +10,7 @@ threadlocal var tid: std.os.linux.pid_t = undefined;
 threadlocal var path: []const u8 = undefined;
 threadlocal var file: std.fs.File = undefined;
 
-pub fn init() void {
+pub fn init() !void {
     pid = std.os.linux.getpid();
 }
 
@@ -18,12 +18,12 @@ pub fn deinit() void {
     //
 }
 
-pub fn init2() void {
+pub fn init2() !void {
     tid = std.os.linux.gettid();
 
-    path = std.fmt.allocPrint(alloc, "/data/trace.{d}.{d}.spall.jsonl", .{ pid, tid }) catch @panic("oom");
-    file = std.fs.cwd().createFile(path, .{}) catch @panic("create fail");
-    file.writer().writeAll("[\n") catch @panic("[");
+    path = try std.fmt.allocPrint(alloc, "/data/trace.{d}.{d}.spall.jsonl", .{ pid, tid });
+    file = try std.fs.cwd().createFile(path, .{});
+    try file.writer().writeAll("[\n");
 }
 
 pub fn deinit2() void {

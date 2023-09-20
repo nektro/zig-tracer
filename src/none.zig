@@ -2,11 +2,11 @@ const std = @import("std");
 const tracer = @import("./mod.zig");
 const log = std.log.scoped(.tracer);
 
-pub fn init() void {}
+pub fn init() !void {}
 
 pub fn deinit() void {}
 
-pub fn init2() void {}
+pub fn init2() !void {}
 
 pub fn deinit2() void {}
 

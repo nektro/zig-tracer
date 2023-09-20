@@ -9,7 +9,7 @@ pub const log = @import("./log.zig");
 pub const spall = @import("./spall.zig");
 
 pub fn init() !void {
-    impl.init();
+    try impl.init();
 }
 
 pub fn deinit() void {
@@ -17,7 +17,7 @@ pub fn deinit() void {
 }
 
 pub fn init2() !void {
-    impl.init2();
+    try impl.init2();
     started = true;
 }
 
