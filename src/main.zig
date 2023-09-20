@@ -2,7 +2,12 @@ const std = @import("std");
 const tracer = @import("tracer");
 pub const build_options = @import("build_options");
 
-pub const tracer_impl = tracer.spall;
+pub const tracer_impl = switch (build_options.backend) {
+    0 => tracer.none,
+    1 => tracer.log,
+    2 => tracer.spall,
+    else => unreachable,
+};
 
 pub fn main() !void {
     try tracer.init();
