@@ -14,7 +14,7 @@ in your program:
 ```zig
 const std = @import("std");
 const tracer = @import("tracer");
-const build_options = @import("build_options");
+pub const build_options = @import("build_options");
 
 pub const tracer_impl = tracer.spall; // supports none, log, spall out of the box
 
