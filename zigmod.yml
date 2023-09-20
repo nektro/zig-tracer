@@ -1,0 +1,6 @@
+id: ede2wygpe1iycfhdm8wzmbce7zxye49zo8xjzt09g132home
+name: tracer
+main: src/mod.zig
+license: MIT
+description: Generic tracing library for Zig, supports multiple backends.
+dependencies:
