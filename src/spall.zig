@@ -26,13 +26,7 @@ pub fn init_thread() !void {
     file = try std.fs.cwd().createFile(path, .{});
     buffered_writer = std.io.bufferedWriter(file.writer());
 
-    // try buffered_writer.writer().writeInt(u64, 0x0BADF00D, .Little);
-    try buffered_writer.writer().writeStruct(Header{
-        .magic = magic,
-        .version = 1,
-        .timestamp_unit = 1.0,
-        .must_be_0 = 0,
-    });
+    try buffered_writer.writer().writeStruct(Header{});
 }
 
 pub fn deinit_thread() void {
@@ -44,32 +38,26 @@ pub fn deinit_thread() void {
 }
 
 pub inline fn trace_begin(ctx: tracer.Ctx) void {
-    buffered_writer.writer().writeStruct(BeginEvent{
-        .type = .begin,
-        .category = 0,
-        .pid = @intCast(pid),
-        .tid = @intCast(tid),
-        .time = @floatFromInt(std.time.microTimestamp()),
-        .name_len = @intCast(std.fmt.count("{s}:{d}:{d} ({s})", .{
-            if (ctx.src.file[0] == '/') ctx.src.file[trim_count..] else ctx.src.file,
-            ctx.src.line,
-            ctx.src.column,
-            ctx.src.fn_name,
-        })),
-        .args_len = 0,
-    }) catch return;
-    buffered_writer.writer().print("{s}:{d}:{d} ({s})", .{
+    const fmt = "{s}:{d}:{d} ({s})";
+    const args = .{
         if (ctx.src.file[0] == '/') ctx.src.file[trim_count..] else ctx.src.file,
         ctx.src.line,
         ctx.src.column,
         ctx.src.fn_name,
+    };
+    buffered_writer.writer().writeStruct(BeginEvent{
+        .pid = @intCast(pid),
+        .tid = @intCast(tid),
+        .time = @floatFromInt(std.time.microTimestamp()),
+        .name_len = @intCast(std.fmt.count(fmt, args)),
+        .args_len = 0,
     }) catch return;
+    buffered_writer.writer().print(fmt, args) catch return;
 }
 
 pub inline fn trace_end(ctx: tracer.Ctx) void {
     _ = ctx;
     buffered_writer.writer().writeStruct(EndEvent{
-        .type = .end,
         .pid = @intCast(pid),
         .tid = @intCast(tid),
         .time = @floatFromInt(std.time.microTimestamp()),
@@ -92,10 +80,10 @@ const magic: u64 = 0x0BADF00D;
 //     must_be_0:      u64,
 // }
 const Header = extern struct {
-    magic: u64 align(1),
-    version: u64 align(1),
-    timestamp_unit: f64 align(1),
-    must_be_0: u64 align(1),
+    magic: u64 align(1) = magic,
+    version: u64 align(1) = 1,
+    timestamp_unit: f64 align(1) = 1.0,
+    must_be_0: u64 align(1) = 0,
 };
 
 // V1_Event_Type :: enum u8 {
@@ -127,8 +115,8 @@ const EventType = enum(u8) {
 //     args_len: u8,
 // }
 const BeginEvent = extern struct {
-    type: EventType align(1),
-    category: u8 align(1),
+    type: EventType align(1) = .begin,
+    category: u8 align(1) = 0,
     pid: u32 align(1),
     tid: u32 align(1),
     time: f64 align(1),
@@ -143,7 +131,7 @@ const BeginEvent = extern struct {
 //     time: f64,
 // }
 const EndEvent = extern struct {
-    type: EventType align(1),
+    type: EventType align(1) = .end,
     pid: u32 align(1),
     tid: u32 align(1),
     time: f64 align(1),
