@@ -6,7 +6,7 @@ var started = false;
 
 pub const none = @import("./none.zig");
 pub const log = @import("./log.zig");
-pub const spall = @import("./spall.zig");
+pub const chrome = @import("./chrome.zig");
 
 pub fn init() !void {
     try impl.init();
