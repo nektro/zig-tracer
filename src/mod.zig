@@ -16,13 +16,13 @@ pub fn deinit() void {
     impl.deinit();
 }
 
-pub fn init2() !void {
-    try impl.init2();
+pub fn init_thread() !void {
+    try impl.init_thread();
     started = true;
 }
 
-pub fn deinit2() void {
-    impl.deinit2();
+pub fn deinit_thread() void {
+    impl.deinit_thread();
 }
 
 pub inline fn trace(src: std.builtin.SourceLocation) Ctx {

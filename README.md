@@ -24,8 +24,8 @@ pub fn main() !void {
 
     // main loop
     while (true) {
-        try tracer.init2();
-        defer tracer.deinit2();
+        try tracer.init_thread();
+        defer tracer.deinit_thread();
 
         handler();
     }

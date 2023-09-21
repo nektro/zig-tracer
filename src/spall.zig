@@ -19,17 +19,17 @@ pub fn deinit() void {
     //
 }
 
-pub fn init2() !void {
+pub fn init_thread() !void {
     tid = std.os.linux.gettid();
 
-    path = try std.fmt.allocPrint(alloc, "/data/trace.{d}.{d}.spall.jsonl", .{ pid, tid });
+    path = try std.fmt.allocPrint(alloc, "/data/trace.{d}.{d}.spall.json", .{ pid, tid });
     file = try std.fs.cwd().createFile(path, .{});
     buffered_writer = std.io.bufferedWriter(file.writer());
 
     try buffered_writer.writer().writeAll("[\n");
 }
 
-pub fn deinit2() void {
+pub fn deinit_thread() void {
     defer alloc.free(path);
     defer file.close();
 
