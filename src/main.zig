@@ -24,6 +24,6 @@ pub fn main() !void {
 }
 
 fn handler() void {
-    const t = tracer.trace(@src());
+    const t = tracer.trace(@src(), "", .{});
     defer t.end();
 }

@@ -37,8 +37,8 @@ pub fn deinit_thread() void {
     log.debug("{s}", .{path});
 }
 
-pub inline fn trace_begin(ctx: tracer.Ctx) void {
-    const fmt = "{s}:{d}:{d} ({s})";
+pub inline fn trace_begin(ctx: tracer.Ctx, comptime ifmt: []const u8, iargs: anytype) void {
+    const fmt = "{s}:{d}:{d} ({s})" ++ ifmt;
     const args = .{
         if (ctx.src.file[0] == '/') ctx.src.file[trim_count..] else ctx.src.file,
         ctx.src.line,
@@ -49,10 +49,10 @@ pub inline fn trace_begin(ctx: tracer.Ctx) void {
         .pid = @intCast(pid),
         .tid = @intCast(tid),
         .time = @floatFromInt(std.time.microTimestamp()),
-        .name_len = @intCast(std.fmt.count(fmt, args)),
+        .name_len = @intCast(std.fmt.count(fmt, args ++ iargs)),
         .args_len = 0,
     }) catch return;
-    buffered_writer.writer().print(fmt, args) catch return;
+    buffered_writer.writer().print(fmt, args ++ iargs) catch return;
 }
 
 pub inline fn trace_end(ctx: tracer.Ctx) void {

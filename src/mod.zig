@@ -26,11 +26,11 @@ pub fn deinit_thread() void {
     impl.deinit_thread();
 }
 
-pub inline fn trace(src: std.builtin.SourceLocation) Ctx {
+pub inline fn trace(src: std.builtin.SourceLocation, comptime fmt: []const u8, args: anytype) Ctx {
     const ctx = Ctx{
         .src = src,
     };
-    if (started) impl.trace_begin(ctx);
+    if (started) impl.trace_begin(ctx, fmt, args);
     return ctx;
 }
 
