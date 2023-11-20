@@ -2,7 +2,7 @@ const std = @import("std");
 const root = @import("root");
 const impl = std.meta.globalOption("tracer_impl", type) orelse none;
 
-var started = false;
+threadlocal var started = false;
 
 pub const none = @import("./none.zig");
 pub const log = @import("./log.zig");
