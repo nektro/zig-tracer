@@ -55,7 +55,7 @@ Any custom backend may also be used that defines the following functions:
 
 - `pub fn init() !void`
 - `pub fn deinit() void`
-- `pub fn init_thread() !void`
+- `pub fn init_thread(dir: std.fs.Dir) !void`
 - `pub fn deinit_thread() void`
 - `pub inline fn trace_begin(ctx: tracer.Ctx, comptime ifmt: []const u8, iargs: anytype) void`
 - `pub inline fn trace_end(ctx: tracer.Ctx) void`

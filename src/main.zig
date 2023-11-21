@@ -17,7 +17,7 @@ pub fn main() !void {
     // main loop
     var go = false;
     while (go) {
-        try tracer.init_thread();
+        try tracer.init_thread(std.fs.cwd());
         defer tracer.deinit_thread();
 
         handler();

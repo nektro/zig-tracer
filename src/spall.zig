@@ -19,11 +19,11 @@ pub fn deinit() void {
     //
 }
 
-pub fn init_thread() !void {
+pub fn init_thread(dir: std.fs.Dir) !void {
     tid = std.os.linux.gettid();
 
-    path = try std.fmt.allocPrint(alloc, "/data/trace.{d}.{d}.spall", .{ pid, tid });
-    file = try std.fs.cwd().createFile(path, .{});
+    path = try std.fmt.allocPrint(alloc, "{d}.{d}.spall", .{ pid, tid });
+    file = try dir.createFile(path, .{});
     buffered_writer = std.io.bufferedWriter(file.writer());
 
     try buffered_writer.writer().writeStruct(Header{});

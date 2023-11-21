@@ -17,8 +17,8 @@ pub fn deinit() void {
     impl.deinit();
 }
 
-pub fn init_thread() !void {
-    try impl.init_thread();
+pub fn init_thread(dir: ?std.fs.Dir) !void {
+    try impl.init_thread(dir orelse std.fs.cwd());
     started = true;
 }
 

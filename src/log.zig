@@ -6,7 +6,9 @@ pub fn init() !void {}
 
 pub fn deinit() void {}
 
-pub fn init_thread() !void {}
+pub fn init_thread(dir: std.fs.Dir) !void {
+    _ = dir;
+}
 
 pub fn deinit_thread() void {}
 
