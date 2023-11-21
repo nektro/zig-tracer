@@ -22,7 +22,7 @@ pub fn deinit() void {
 pub fn init_thread() !void {
     tid = std.os.linux.gettid();
 
-    path = try std.fmt.allocPrint(alloc, "/data/trace.{d}.{d}.spall.json", .{ pid, tid });
+    path = try std.fmt.allocPrint(alloc, "/data/trace.{d}.{d}.chrome.json", .{ pid, tid });
     file = try std.fs.cwd().createFile(path, .{});
     buffered_writer = std.io.bufferedWriter(file.writer());
 
@@ -38,16 +38,19 @@ pub fn deinit_thread() void {
     log.debug("{s}", .{path});
 }
 
-pub inline fn trace_begin(ctx: tracer.Ctx) void {
+pub inline fn trace_begin(ctx: tracer.Ctx, comptime ifmt: []const u8, iargs: anytype) void {
     buffered_writer.writer().print(
-        \\{{"cat":"function", "name":"{s}:{d}:{d} ({s})", "ph": "B", "pid": {d}, "tid": {d}, "ts": {d}}},
-        \\
+        \\{{"cat":"function", "name":"{s}:{d}:{d} ({s})
+        ++ ifmt ++
+            \\", "ph": "B", "pid": {d}, "tid": {d}, "ts": {d}}},
+            \\
     ,
         .{
             if (ctx.src.file[0] == '/') ctx.src.file[trim_count..] else ctx.src.file,
             ctx.src.line,
             ctx.src.column,
             ctx.src.fn_name,
+        } ++ iargs ++ .{
             pid,
             tid,
             std.time.microTimestamp(),

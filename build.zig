@@ -9,6 +9,7 @@ pub fn build(b: *std.Build) void {
     addTest(b, target, mode, mod, 0);
     addTest(b, target, mode, mod, 1);
     addTest(b, target, mode, mod, 2);
+    addTest(b, target, mode, mod, 3);
 }
 
 fn addTest(b: *std.Build, target: std.zig.CrossTarget, mode: std.builtin.Mode, mod: *std.build.Module, comptime backend: u8) void {

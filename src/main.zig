@@ -6,6 +6,7 @@ pub const tracer_impl = switch (build_options.backend) {
     0 => tracer.none,
     1 => tracer.log,
     2 => tracer.spall,
+    3 => tracer.chrome,
     else => unreachable,
 };
 
