@@ -37,7 +37,7 @@ fn handler() void {
 }
 ```
 
-`@src()` values are absolute paths so backends use this value to trim it to only log relative paths
+`@src()` values are sometimes absolute paths so backends may use this value to trim it to only log relative paths
 
 ```zig
 exe_options.addOption(usize, "src_file_trimlen", std.fs.path.dirname(std.fs.path.dirname(@src().file).?).?.len);
