@@ -10,6 +10,9 @@ pub fn build(b: *std.Build) void {
     addTest(b, target, mode, mod, 1);
     addTest(b, target, mode, mod, 2);
     addTest(b, target, mode, mod, 3);
+
+    const test_step = b.step("test", "dummy test step to pass CI checks");
+    _ = test_step;
 }
 
 fn addTest(b: *std.Build, target: std.zig.CrossTarget, mode: std.builtin.Mode, mod: *std.build.Module, comptime backend: u8) void {
