@@ -35,7 +35,6 @@ pub fn deinit_thread() void {
 
     buffered_writer.writer().writeAll("]\n") catch {};
     buffered_writer.flush() catch {};
-    log.debug("{s}", .{path});
 }
 
 pub inline fn trace_begin(ctx: tracer.Ctx, comptime ifmt: []const u8, iargs: anytype) void {
