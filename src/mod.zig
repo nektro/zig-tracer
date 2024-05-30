@@ -1,6 +1,7 @@
 const std = @import("std");
 const root = @import("root");
-const impl = std.meta.globalOption("tracer_impl", type) orelse none;
+const extras = @import("extras");
+const impl = extras.globalOption(type, "tracer_impl") orelse none;
 
 threadlocal var started = false;
 

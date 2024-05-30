@@ -4,3 +4,4 @@ main: src/mod.zig
 license: MIT
 description: Generic tracing library for Zig, supports multiple backends.
 dependencies:
+  - src: git https://github.com/nektro/zig-extras
