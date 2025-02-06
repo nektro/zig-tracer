@@ -1,7 +1,7 @@
 const std = @import("std");
 const root = @import("root");
 const extras = @import("extras");
-const impl = extras.globalOption(type, "tracer_impl") orelse none;
+const impl = extras.globalOption("tracer_impl", type) orelse none;
 
 threadlocal var started = false;
 
