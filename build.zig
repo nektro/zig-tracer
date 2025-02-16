@@ -13,7 +13,7 @@ pub fn build(b: *std.Build) void {
     addTest(b, target, mode, disable_llvm, mod, 2);
     addTest(b, target, mode, disable_llvm, mod, 3);
 
-    const test_step = b.step("test", "dummy test step to pass CI checks");
+    const test_step = b.step("test", "Run all library tests");
     test_step.dependOn(b.default_step);
 }
 
