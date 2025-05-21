@@ -48,7 +48,7 @@ pub inline fn trace_begin(ctx: tracer.Ctx, comptime ifmt: []const u8, iargs: any
         .pid = @intCast(pid),
         .tid = @intCast(tid),
         .time = @floatFromInt(std.time.microTimestamp()),
-        .name_len = @intCast(std.fmt.count(fmt, args ++ iargs)),
+        .name_len = @truncate(std.fmt.count(fmt, args ++ iargs)),
         .args_len = 0,
     }) catch return;
     buffered_writer.writer().print(fmt, args ++ iargs) catch return;
