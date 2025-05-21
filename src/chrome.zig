@@ -3,7 +3,6 @@ const tracer = @import("./mod.zig");
 const alloc = std.heap.c_allocator;
 const log = std.log.scoped(.tracer);
 const root = @import("root");
-const trim_count = root.build_options.src_file_trimlen;
 
 var pid: std.os.linux.pid_t = undefined;
 threadlocal var tid: std.os.linux.pid_t = undefined;
@@ -40,12 +39,12 @@ pub fn deinit_thread() void {
 pub inline fn trace_begin(ctx: tracer.Ctx, comptime ifmt: []const u8, iargs: anytype) void {
     buffered_writer.writer().print(
         \\{{"cat":"function", "name":"{s}:{d}:{d} ({s})
-        ++ ifmt ++
-            \\", "ph": "B", "pid": {d}, "tid": {d}, "ts": {d}}},
-            \\
+    ++ ifmt ++
+        \\", "ph": "B", "pid": {d}, "tid": {d}, "ts": {d}}},
+        \\
     ,
         .{
-            if (ctx.src.file[0] == '/') ctx.src.file[trim_count..] else ctx.src.file,
+            ctx.src.file,
             ctx.src.line,
             ctx.src.column,
             ctx.src.fn_name,

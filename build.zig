@@ -14,13 +14,12 @@ pub fn build(b: *std.Build) void {
     addTest(b, target, mode, disable_llvm, mod, 3);
 
     const test_step = b.step("test", "Run all library tests");
-    test_step.dependOn(b.default_step);
+    test_step.dependOn(b.getInstallStep());
 }
 
 fn addTest(b: *std.Build, target: std.Build.ResolvedTarget, mode: std.builtin.Mode, disable_llvm: bool, mod: *std.Build.Module, comptime backend: u8) void {
     _ = mod;
     const options = b.addOptions();
-    options.addOption(usize, "src_file_trimlen", std.fs.path.dirname(std.fs.path.dirname(@src().file).?).?.len);
     options.addOption(u8, "backend", backend);
 
     const exe = b.addExecutable(.{
