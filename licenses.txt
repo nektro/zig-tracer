@@ -2,3 +2,7 @@ MIT:
 = https://spdx.org/licenses/MIT
 - This
 - git https://github.com/nektro/zig-extras
+- git https://github.com/nektro/zig-sys-linux
+
+Unspecified:
+- system_lib c

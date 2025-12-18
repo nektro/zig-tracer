@@ -3,15 +3,16 @@ const tracer = @import("./mod.zig");
 const alloc = std.heap.c_allocator;
 const log = std.log.scoped(.tracer);
 const root = @import("root");
+const linux = @import("sys-linux");
 
-var pid: std.os.linux.pid_t = undefined;
-threadlocal var tid: std.os.linux.pid_t = undefined;
+var pid: linux.pid_t = undefined;
+threadlocal var tid: linux.pid_t = undefined;
 threadlocal var path: []const u8 = undefined;
 threadlocal var file: std.fs.File = undefined;
 threadlocal var buffered_writer: std.io.BufferedWriter(4096, std.fs.File.Writer) = undefined;
 
 pub fn init() !void {
-    pid = std.os.linux.getpid();
+    pid = linux.getpid();
 }
 
 pub fn deinit() void {
@@ -19,7 +20,7 @@ pub fn deinit() void {
 }
 
 pub fn init_thread(dir: std.fs.Dir) !void {
-    tid = std.os.linux.gettid();
+    tid = linux.gettid();
 
     path = try std.fmt.allocPrint(alloc, "{d}.{d}.spall", .{ pid, tid });
     file = try dir.createFile(path, .{});
