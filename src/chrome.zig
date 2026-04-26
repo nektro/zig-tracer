@@ -5,6 +5,7 @@ const log = std.log.scoped(.tracer);
 const root = @import("root");
 const nfs = @import("nfs");
 const nio = @import("nio");
+const time = @import("time");
 const linux = @import("sys-linux");
 
 var pid: linux.pid_t = undefined;
@@ -54,7 +55,7 @@ pub inline fn trace_begin(ctx: tracer.Ctx, comptime ifmt: []const u8, iargs: any
         } ++ iargs ++ .{
             pid,
             tid,
-            std.time.microTimestamp(),
+            time.microTimestamp(),
         },
     ) catch {};
 }
@@ -68,7 +69,7 @@ pub inline fn trace_end(ctx: tracer.Ctx) void {
         .{
             pid,
             tid,
-            std.time.microTimestamp(),
+            time.microTimestamp(),
         },
     ) catch {};
 }

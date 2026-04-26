@@ -5,6 +5,7 @@ const log = std.log.scoped(.tracer);
 const root = @import("root");
 const nfs = @import("nfs");
 const nio = @import("nio");
+const time = @import("time");
 const linux = @import("sys-linux");
 
 var pid: linux.pid_t = undefined;
@@ -44,7 +45,7 @@ pub inline fn trace_begin(ctx: tracer.Ctx, comptime ifmt: []const u8, iargs: any
     buffered_writer.writeStruct(BeginEvent{
         .pid = @intCast(pid),
         .tid = @intCast(tid),
-        .time = @floatFromInt(std.time.microTimestamp()),
+        .time = @floatFromInt(time.microTimestamp()),
         .name_len = @truncate(std.fmt.count(fmt, args ++ iargs)),
         .args_len = 0,
     }) catch return;
@@ -56,7 +57,7 @@ pub inline fn trace_end(ctx: tracer.Ctx) void {
     buffered_writer.writeStruct(EndEvent{
         .pid = @intCast(pid),
         .tid = @intCast(tid),
-        .time = @floatFromInt(std.time.microTimestamp()),
+        .time = @floatFromInt(time.microTimestamp()),
     }) catch return;
 }
 
