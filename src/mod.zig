@@ -26,6 +26,7 @@ pub fn init_thread(dir: ?nfs.Dir) !void {
 
 pub fn deinit_thread() void {
     impl.deinit_thread();
+    started = false;
 }
 
 pub inline fn trace(src: std.builtin.SourceLocation, comptime fmt: []const u8, args: anytype) Ctx {
