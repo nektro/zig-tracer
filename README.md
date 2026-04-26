@@ -38,12 +38,6 @@ fn handler() void {
 }
 ```
 
-`@src()` values are sometimes absolute paths so backends may use this value to trim it to only log relative paths
-
-```zig
-exe_options.addOption(usize, "src_file_trimlen", std.fs.path.dirname(std.fs.path.dirname(@src().file).?).?.len);
-```
-
 ## Backends
 
 - `none` this is the default and causes tracing calls to become a no-op so that `tracer` can be added to libraries transparently
