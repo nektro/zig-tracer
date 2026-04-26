@@ -1,6 +1,7 @@
 const std = @import("std");
 const root = @import("root");
 const extras = @import("extras");
+const nfs = @import("nfs");
 const impl = extras.globalOption("tracer_impl", type) orelse none;
 
 threadlocal var started = false;
@@ -18,8 +19,8 @@ pub fn deinit() void {
     impl.deinit();
 }
 
-pub fn init_thread(dir: ?std.fs.Dir) !void {
-    try impl.init_thread(dir orelse std.fs.cwd());
+pub fn init_thread(dir: ?nfs.Dir) !void {
+    try impl.init_thread(dir orelse nfs.cwd());
     started = true;
 }
 

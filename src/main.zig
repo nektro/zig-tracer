@@ -1,5 +1,7 @@
 const std = @import("std");
 const tracer = @import("tracer");
+const nfs = @import("nfs");
+
 pub const build_options = @import("build_options");
 
 pub const tracer_impl = switch (build_options.backend) {
@@ -18,7 +20,7 @@ pub fn main() !void {
     var go = false;
     _ = &go;
     while (go) {
-        try tracer.init_thread(std.fs.cwd());
+        try tracer.init_thread(nfs.cwd());
         defer tracer.deinit_thread();
 
         handler();

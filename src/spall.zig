@@ -3,13 +3,15 @@ const tracer = @import("./mod.zig");
 const alloc = std.heap.c_allocator;
 const log = std.log.scoped(.tracer);
 const root = @import("root");
+const nfs = @import("nfs");
+const nio = @import("nio");
 const linux = @import("sys-linux");
 
 var pid: linux.pid_t = undefined;
 threadlocal var tid: linux.pid_t = undefined;
-threadlocal var path: []const u8 = undefined;
-threadlocal var file: std.fs.File = undefined;
-threadlocal var buffered_writer: std.io.BufferedWriter(4096, std.fs.File.Writer) = undefined;
+threadlocal var path: [:0]const u8 = undefined;
+threadlocal var file: nfs.File = undefined;
+threadlocal var buffered_writer: nio.BufferedWriter(4096, nfs.File) = undefined;
 
 pub fn init() !void {
     pid = linux.getpid();
@@ -19,14 +21,14 @@ pub fn deinit() void {
     //
 }
 
-pub fn init_thread(dir: std.fs.Dir) !void {
+pub fn init_thread(dir: nfs.Dir) !void {
     tid = linux.gettid();
 
-    path = try std.fmt.allocPrint(alloc, "{d}.{d}.spall", .{ pid, tid });
+    path = try std.fmt.allocPrintZ(alloc, "{d}.{d}.spall", .{ pid, tid });
     file = try dir.createFile(path, .{});
-    buffered_writer = std.io.bufferedWriter(file.writer());
+    buffered_writer = .init(file);
 
-    try buffered_writer.writer().writeStruct(Header{});
+    try buffered_writer.writeStruct(Header{});
 }
 
 pub fn deinit_thread() void {
@@ -39,19 +41,19 @@ pub fn deinit_thread() void {
 pub inline fn trace_begin(ctx: tracer.Ctx, comptime ifmt: []const u8, iargs: anytype) void {
     const fmt = "{s}:{d}:{d} ({s})" ++ ifmt;
     const args = .{ ctx.src.file, ctx.src.line, ctx.src.column, ctx.src.fn_name };
-    buffered_writer.writer().writeStruct(BeginEvent{
+    buffered_writer.writeStruct(BeginEvent{
         .pid = @intCast(pid),
         .tid = @intCast(tid),
         .time = @floatFromInt(std.time.microTimestamp()),
         .name_len = @truncate(std.fmt.count(fmt, args ++ iargs)),
         .args_len = 0,
     }) catch return;
-    buffered_writer.writer().print(fmt, args ++ iargs) catch return;
+    buffered_writer.print(fmt, args ++ iargs) catch return;
 }
 
 pub inline fn trace_end(ctx: tracer.Ctx) void {
     _ = ctx;
-    buffered_writer.writer().writeStruct(EndEvent{
+    buffered_writer.writeStruct(EndEvent{
         .pid = @intCast(pid),
         .tid = @intCast(tid),
         .time = @floatFromInt(std.time.microTimestamp()),

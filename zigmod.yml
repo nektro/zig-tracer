@@ -6,3 +6,8 @@ description: Generic tracing library for Zig, supports multiple backends.
 dependencies:
   - src: git https://github.com/nektro/zig-extras
   - src: git https://github.com/nektro/zig-sys-linux
+  - src: git https://github.com/nektro/zig-nfs
+  - src: git https://github.com/nektro/zig-nio
+
+root_dependencies:
+  - src: git https://github.com/nektro/zig-nfs
