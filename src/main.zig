@@ -13,14 +13,18 @@ pub const tracer_impl = switch (build_options.backend) {
 };
 
 pub fn main() !void {
-    try tracer.init();
+    try tracer.init(.{});
     defer tracer.deinit();
 
     // main loop
     var go = false;
     _ = &go;
     while (go) {
-        try tracer.init_thread(nfs.cwd());
+        try tracer.init_thread(switch (build_options.backend) {
+            0, 1 => .{},
+            2, 3 => .{nfs.cwd()},
+            else => comptime unreachable,
+        });
         defer tracer.deinit_thread();
 
         handler();

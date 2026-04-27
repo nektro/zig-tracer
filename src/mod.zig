@@ -11,16 +11,16 @@ pub const log = @import("./log.zig");
 pub const chrome = @import("./chrome.zig");
 pub const spall = @import("./spall.zig");
 
-pub fn init() !void {
-    try impl.init();
+pub fn init(args: @typeInfo(@TypeOf(impl.init)).@"fn".params[0].type.?) !void {
+    try impl.init(args);
 }
 
 pub fn deinit() void {
     impl.deinit();
 }
 
-pub fn init_thread(dir: ?nfs.Dir) !void {
-    try impl.init_thread(dir orelse nfs.cwd());
+pub fn init_thread(args: @typeInfo(@TypeOf(impl.init_thread)).@"fn".params[0].type.?) !void {
+    try impl.init_thread(args);
     started = true;
 }
 

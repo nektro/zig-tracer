@@ -1,14 +1,15 @@
 const std = @import("std");
 const tracer = @import("./mod.zig");
 const log = std.log.scoped(.tracer);
-const nfs = @import("nfs");
 
-pub fn init() !void {}
+pub fn init(args: struct {}) !void {
+    _ = args;
+}
 
 pub fn deinit() void {}
 
-pub fn init_thread(dir: nfs.Dir) !void {
-    _ = dir;
+pub fn init_thread(args: struct {}) !void {
+    _ = args;
 }
 
 pub fn deinit_thread() void {}

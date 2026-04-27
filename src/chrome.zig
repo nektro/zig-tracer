@@ -14,7 +14,8 @@ threadlocal var path: [:0]const u8 = undefined;
 threadlocal var file: nfs.File = undefined;
 threadlocal var buffered_writer: nio.BufferedWriter(4096, nfs.File) = undefined;
 
-pub fn init() !void {
+pub fn init(args: struct {}) !void {
+    _ = args;
     pid = linux.getpid();
 }
 
@@ -22,7 +23,8 @@ pub fn deinit() void {
     //
 }
 
-pub fn init_thread(dir: nfs.Dir) !void {
+pub fn init_thread(args: struct { nfs.Dir }) !void {
+    const dir = args[0];
     tid = linux.gettid();
 
     path = try std.fmt.allocPrintZ(alloc, "trace.{d}.{d}.chrome.json", .{ pid, tid });

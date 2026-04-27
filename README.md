@@ -15,17 +15,18 @@ in your program:
 ```zig
 const std = @import("std");
 const tracer = @import("tracer");
+const nfs = @import("nfs");
 pub const build_options = @import("build_options");
 
 pub const tracer_impl = tracer.spall; // see 'Backends' section below
 
 pub fn main() !void {
-    try tracer.init();
+    try tracer.init(.{});
     defer tracer.deinit();
 
     // main loop
     while (true) {
-        try tracer.init_thread();
+        try tracer.init_thread(.{nfs.cwd()});
         defer tracer.deinit_thread();
 
         handler();
