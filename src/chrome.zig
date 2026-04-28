@@ -42,7 +42,7 @@ pub fn deinit_thread() void {
     buffered_writer.flush() catch {};
 }
 
-pub inline fn trace_begin(ctx: tracer.Ctx, comptime ifmt: []const u8, iargs: anytype) void {
+pub inline fn trace_begin(src: std.builtin.SourceLocation, comptime ifmt: []const u8, iargs: anytype) void {
     buffered_writer.print(
         \\{{"cat":"function", "name":"{s}:{d}:{d} ({s})
     ++ ifmt ++
@@ -50,10 +50,10 @@ pub inline fn trace_begin(ctx: tracer.Ctx, comptime ifmt: []const u8, iargs: any
         \\
     ,
         .{
-            ctx.src.file,
-            ctx.src.line,
-            ctx.src.column,
-            ctx.src.fn_name,
+            src.file,
+            src.line,
+            src.column,
+            src.fn_name,
         } ++ iargs ++ .{
             pid,
             tid,
@@ -75,3 +75,5 @@ pub inline fn trace_end(ctx: tracer.Ctx) void {
         },
     ) catch {};
 }
+
+pub const Data = void;

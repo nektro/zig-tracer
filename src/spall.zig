@@ -41,9 +41,9 @@ pub fn deinit_thread() void {
     buffered_writer.flush() catch {};
 }
 
-pub inline fn trace_begin(ctx: tracer.Ctx, comptime ifmt: []const u8, iargs: anytype) void {
+pub inline fn trace_begin(src: std.builtin.SourceLocation, comptime ifmt: []const u8, iargs: anytype) void {
     const fmt = "{s}:{d}:{d} ({s})" ++ ifmt;
-    const args = .{ ctx.src.file, ctx.src.line, ctx.src.column, ctx.src.fn_name };
+    const args = .{ src.file, src.line, src.column, src.fn_name };
     buffered_writer.writeStruct(BeginEvent{
         .pid = @intCast(pid),
         .tid = @intCast(tid),
@@ -62,6 +62,8 @@ pub inline fn trace_end(ctx: tracer.Ctx) void {
         .time = @floatFromInt(time.microTimestamp()),
     }) catch return;
 }
+
+pub const Data = void;
 
 // https://github.com/colrdavidson/spall-web/blob/1d4610a1fe9aaaf2e071327a1142a498f3436bdc/formats/spall/spall.odin
 // https://github.com/colrdavidson/spall-web/blob/1d4610a1fe9aaaf2e071327a1142a498f3436bdc/tools/json2bin/json2bin.odin
