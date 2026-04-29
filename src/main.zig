@@ -4,13 +4,7 @@ const nfs = @import("nfs");
 
 pub const build_options = @import("build_options");
 
-pub const tracer_impl = switch (build_options.backend) {
-    0 => tracer.none,
-    1 => tracer.log,
-    2 => tracer.spall,
-    3 => tracer.chrome,
-    else => unreachable,
-};
+pub const tracer_backend: tracer.Backend = @enumFromInt(build_options.backend);
 
 pub fn main() !void {
     try tracer.init(.{});

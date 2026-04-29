@@ -2,12 +2,25 @@ const std = @import("std");
 const root = @import("root");
 const extras = @import("extras");
 const nfs = @import("nfs");
-const impl = extras.globalOption("tracer_impl", type) orelse none;
+const backend: Backend = extras.globalOption("tracer_backend", Backend) orelse .none;
+const impl = switch (backend) {
+    .none => none,
+    .log => log,
+    .chrome => chrome,
+    .spall => spall,
+};
 
 pub const none = @import("./none.zig");
 pub const log = @import("./log.zig");
 pub const chrome = @import("./chrome.zig");
 pub const spall = @import("./spall.zig");
+
+pub const Backend = enum {
+    none,
+    log,
+    chrome,
+    spall,
+};
 
 pub fn init(args: @typeInfo(@TypeOf(impl.init)).@"fn".params[0].type.?) !void {
     try impl.init(args);
