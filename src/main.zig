@@ -11,17 +11,19 @@ pub fn main() !void {
     defer tracer.deinit();
 
     // main loop
-    var go = false;
+    var go = true;
     _ = &go;
     while (go) {
         try tracer.init_thread(switch (build_options.backend) {
             0, 1 => .{},
-            2, 3 => .{nfs.cwd()},
+            2, 3 => .{try nfs.mkdtemp()},
             else => comptime unreachable,
         });
         defer tracer.deinit_thread();
 
         handler();
+
+        break;
     }
 }
 

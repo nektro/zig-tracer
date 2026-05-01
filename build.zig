@@ -34,4 +34,9 @@ fn addTest(b: *std.Build, target: std.Build.ResolvedTarget, mode: std.builtin.Mo
     exe.use_llvm = !disable_llvm;
     exe.use_lld = !disable_llvm;
     b.installArtifact(exe);
+
+    const run_t = b.addRunArtifact(exe);
+    run_t.setCwd(b.path("."));
+    run_t.has_side_effects = true;
+    b.getInstallStep().dependOn(&run_t.step);
 }
