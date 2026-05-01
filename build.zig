@@ -12,6 +12,7 @@ pub fn build(b: *std.Build) void {
     addTest(b, target, mode, disable_llvm, mod, 1);
     addTest(b, target, mode, disable_llvm, mod, 2);
     addTest(b, target, mode, disable_llvm, mod, 3);
+    addTest(b, target, mode, disable_llvm, mod, 4);
 
     const test_step = b.step("test", "Run all library tests");
     test_step.dependOn(b.getInstallStep());

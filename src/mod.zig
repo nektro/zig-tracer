@@ -8,18 +8,21 @@ const impl = switch (backend) {
     .log => log,
     .chrome => chrome,
     .spall => spall,
+    .otel => otel,
 };
 
 pub const none = @import("./none.zig");
 pub const log = @import("./log.zig");
 pub const chrome = @import("./chrome.zig");
 pub const spall = @import("./spall.zig");
+pub const otel = @import("./otel.zig");
 
 pub const Backend = enum {
     none,
     log,
     chrome,
     spall,
+    otel,
 };
 
 pub fn init(args: @typeInfo(@TypeOf(impl.init)).@"fn".params[0].type.?) !void {

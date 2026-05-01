@@ -17,6 +17,7 @@ pub fn main() !void {
         try tracer.init_thread(switch (build_options.backend) {
             0, 1 => .{},
             2, 3 => .{try nfs.mkdtemp()},
+            4 => .{std.heap.c_allocator},
             else => comptime unreachable,
         });
         defer tracer.deinit_thread();
