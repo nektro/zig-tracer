@@ -147,8 +147,8 @@ fn trace_end_inner(ctx: tracer.Ctx) !void {
     if (ctx.data.parent_id) |*pi| try writef_bytes(w, 4, pi);
     try writef_string(w, 5, ctx.data.name);
     try writef_varint(w, 6, 2);
-    try writef_i64(w, 7, @floatFromInt(ctx.data.time_start_ns));
-    try writef_i64(w, 8, @floatFromInt(time.nanoTimestamp()));
+    try writef_i64(w, 7, (ctx.data.time_start_ns));
+    try writef_i64(w, 8, @intCast(time.nanoTimestamp()));
     try spans.append(allocator, temp.items);
 }
 
@@ -241,7 +241,7 @@ fn writef_kv(w: anytype, nr: u64, kvs: anytype) !void {
     }
 }
 
-fn writef_i64(w: anytype, nr: u64, i: f64) !void {
+fn writef_i64(w: anytype, nr: u64, i: u64) !void {
     try write_tag(w, nr, .i64);
     try w.writeAll(&std.mem.toBytes((i)));
 }
