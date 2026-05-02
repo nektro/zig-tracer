@@ -25,6 +25,8 @@ pub const Backend = enum {
     otel,
 };
 
+threadlocal var started = false;
+
 pub fn init(args: @typeInfo(@TypeOf(impl.init)).@"fn".params[0].type.?) !void {
     try impl.init(args);
 }
@@ -35,16 +37,18 @@ pub fn deinit() void {
 
 pub fn init_thread(args: @typeInfo(@TypeOf(impl.init_thread)).@"fn".params[0].type.?) !void {
     try impl.init_thread(args);
+    started = true;
 }
 
 pub fn deinit_thread() void {
     impl.deinit_thread();
+    started = false;
 }
 
 pub inline fn trace(src: std.builtin.SourceLocation, comptime fmt: []const u8, args: anytype) Ctx {
     return .{
         .src = src,
-        .data = impl.trace_begin(src, fmt, args),
+        .data = if (!started) undefined else impl.trace_begin(src, fmt, args),
     };
 }
 
@@ -53,6 +57,7 @@ pub const Ctx = struct {
     data: impl.Data,
 
     pub inline fn end(self: Ctx) void {
+        if (!started) return;
         impl.trace_end(self);
     }
 };
