@@ -16,14 +16,38 @@ const sys = switch (builtin.target.os.tag) {
 // export OTEL_EXPORTER_OTLP_ENDPOINT=http://127.0.0.1:4318
 // export OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://localhost:4318/v1/traces
 
+// https://opentelemetry.io/docs/specs/otlp/
+// https://protobuf.dev/programming-guides/encoding/
 // https://github.com/open-telemetry/opentelemetry-proto/tree/v1.10.0/opentelemetry/proto
+
+var etc_os_release: []const u8 = "";
+var @"os.version": ?[]const u8 = null;
+var @"os.name": ?[]const u8 = null;
 
 pub fn init(args: struct {}) !void {
     _ = args;
+    const file = try nfs.cwd().openFile("/etc/os-release", .{});
+    defer file.close();
+    etc_os_release = try file.mmap();
+    var iter = std.mem.splitScalar(u8, etc_os_release, '\n');
+    iter.index = 0;
+    while (iter.next()) |line| {
+        if (extras.trimPrefixEnsure(line, "VERSION_ID=")) |val| {
+            @"os.version" = std.mem.trim(u8, val, &.{'"'});
+            break;
+        }
+    }
+    iter.index = 0;
+    while (iter.next()) |line| {
+        if (extras.trimPrefixEnsure(line, "NAME=")) |val| {
+            @"os.name" = std.mem.trim(u8, val, &.{'"'});
+            break;
+        }
+    }
 }
 
 pub fn deinit() void {
-    _ = {};
+    nfs.munmap(etc_os_release);
 }
 
 threadlocal var allocator: std.mem.Allocator = undefined;
@@ -31,6 +55,16 @@ threadlocal var traces_endpoint: std.Uri = undefined;
 threadlocal var trace_id: [16]u8 = undefined;
 threadlocal var prev_span_id: ?[8]u8 = undefined;
 threadlocal var spans: std.ArrayListUnmanaged([]const u8) = .empty;
+
+pub var @"service.version": ?[]const u8 = null;
+pub var @"server.address": ?[]const u8 = null;
+pub var @"server.port": ?u16 = null;
+pub threadlocal var @"http.request.method": ?[]const u8 = null;
+pub threadlocal var @"http.response.status_code": ?u16 = null;
+pub threadlocal var @"http.route": ?[]const u8 = null;
+
+pub threadlocal var @"url.path": ?[]const u8 = null;
+pub threadlocal var @"url.query": ?[]const u8 = null;
 
 pub fn init_thread(args: struct { std.mem.Allocator, std.Uri }) !void {
     allocator, traces_endpoint = args;
@@ -73,7 +107,15 @@ fn deinit_thread_inner() !void {
             .@"telemetry.sdk.version" = "(hash)",
             .@"telemetry.sdk.language" = "zig",
             .@"service.name" = root.otel_service_name,
+            .@"service.version" = @"service.version",
             .@"os.type" = "linux",
+            .@"os.version" = @"os.version",
+            .@"os.name" = @"os.name",
+            .@"server.address" = @"server.address",
+            .@"server.port" = @"server.port",
+            .@"http.request.method" = @"http.request.method",
+            .@"http.response.status_code" = @"http.response.status_code",
+            .@"http.route" = @"http.route",
         });
         try writef_varint(w, 2, 0);
     }
@@ -149,6 +191,7 @@ fn trace_end_inner(ctx: tracer.Ctx) !void {
     try writef_varint(w, 6, 2);
     try writef_i64(w, 7, (ctx.data.time_start_ns));
     try writef_i64(w, 8, @intCast(time.nanoTimestamp()));
+    if (ctx.data.parent_id == null) try writef_kv(w, 9, .{ .@"url.path" = @"url.path", .@"url.query" = @"url.query" });
     try spans.append(allocator, temp.items);
 }
 
@@ -227,10 +270,13 @@ fn writef_kv(w: anytype, nr: u64, kvs: anytype) !void {
     defer temp2.deinit(allocator);
     const y = temp2.writer(allocator);
 
-    inline for (comptime std.meta.fields(@TypeOf(kvs))) |field| {
+    inline for (comptime std.meta.fields(@TypeOf(kvs))) |field| blk: {
+        const value = @field(kvs, field.name);
+        if (@typeInfo(@TypeOf(value)) == .optional and value == null) break :blk;
+
         try writef_string(x, 1, field.name);
 
-        try writef_string(y, 1, @field(kvs, field.name));
+        try writef_kv_v(y, value);
         try writef_len(x, 2, temp2.items.len);
         try x.writeAll(temp2.items);
         temp2.clearRetainingCapacity();
@@ -239,6 +285,28 @@ fn writef_kv(w: anytype, nr: u64, kvs: anytype) !void {
         try w.writeAll(temp.items);
         temp.clearRetainingCapacity();
     }
+}
+fn writef_kv_v(w: anytype, v: anytype) !void {
+    const V = @TypeOf(v);
+    const info = @typeInfo(V);
+    if (info == .optional) {
+        if (v == null) return;
+        return writef_kv_v(w, v.?);
+    }
+    if (comptime extras.isZigString(V)) {
+        return writef_string(w, 1, v);
+    }
+    if (info == .bool) {
+        return write_varint(w, 2, @intFromBool(v));
+    }
+    if (info == .int) {
+        return writef_varint(w, 3, v);
+    }
+    if (info == .float) {
+        return writef_i64(w, 4, @bitCast(v));
+    }
+    @compileLog(v);
+    comptime unreachable;
 }
 
 fn writef_i64(w: anytype, nr: u64, i: u64) !void {
