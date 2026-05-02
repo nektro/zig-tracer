@@ -113,7 +113,7 @@ fn deinit_thread_inner() !void {
         try req.writeAll(export_request.items);
         try req.finish();
         try req.wait();
-        if (req.response.status != .ok) std.log.scoped(.tracer).warn("otel: {s} {d}", .{ &trace_id, req.response.status });
+        if (req.response.status != .ok) std.log.scoped(.tracer).warn("otel: {s} {d}", .{ &extras.to_hex(trace_id), req.response.status });
     }
 }
 
