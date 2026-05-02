@@ -22,6 +22,7 @@ fn addTest(b: *std.Build, target: std.Build.ResolvedTarget, mode: std.builtin.Mo
     _ = mod;
     const options = b.addOptions();
     options.addOption(u8, "backend", backend);
+    options.addOption([]const u8, "version", std.mem.trimRight(u8, b.run(&.{ "git", "describe", "--tags" }), "\n"));
 
     const exe = b.addExecutable(.{
         .name = "test" ++ std.fmt.comptimePrint("{d}", .{backend}),

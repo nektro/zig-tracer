@@ -27,15 +27,16 @@ pub fn deinit() void {
 }
 
 threadlocal var allocator: std.mem.Allocator = undefined;
+threadlocal var traces_endpoint: std.Uri = undefined;
 threadlocal var memfd: nfs.File = undefined;
 threadlocal var buffered_writer: nio.BufferedWriter(4096, nfs.File) = undefined;
 threadlocal var trace_id: [16]u8 = undefined;
 threadlocal var prev_span_id: ?[8]u8 = undefined;
 threadlocal var spans: std.ArrayListUnmanaged([]const u8) = .empty;
 
-pub fn init_thread(args: struct { std.mem.Allocator }) !void {
+pub fn init_thread(args: struct { std.mem.Allocator, std.Uri }) !void {
     std.log.debug("called otel init_thread", .{});
-    allocator = args[0];
+    allocator, traces_endpoint = args;
     memfd = try nfs.memfd_create("zig-tracer", 0);
     buffered_writer = .init(memfd);
     trace_id = extras.randomBytes(16);
@@ -93,8 +94,83 @@ pub fn init_thread(args: struct { std.mem.Allocator }) !void {
 }
 
 pub fn deinit_thread() void {
+    deinit_thread_inner() catch {};
+    spans.clearAndFree(allocator);
     buffered_writer.flush() catch {};
     memfd.close();
+}
+fn deinit_thread_inner() !void {
+    var instrumentation_scope: std.ArrayListUnmanaged(u8) = .empty;
+    defer instrumentation_scope.deinit(allocator);
+    {
+        const w = instrumentation_scope.writer(allocator);
+        try writef_string(w, 1, "github.com/nektro/zig-tracer");
+        try writef_string(w, 2, "(hash)");
+        try writef_len(w, 3, 0);
+        try writef_varint(w, 4, 0);
+    }
+    var scope_spans: std.ArrayListUnmanaged(u8) = .empty;
+    defer scope_spans.deinit(allocator);
+    {
+        const w = scope_spans.writer(allocator);
+        try writef_len(w, 1, instrumentation_scope.items.len);
+        try w.writeAll(instrumentation_scope.items);
+        instrumentation_scope.clearAndFree(allocator);
+        for (spans.items) |sp| {
+            try writef_len(w, 2, sp.len);
+            try w.writeAll(sp);
+        }
+    }
+    var resource: std.ArrayListUnmanaged(u8) = .empty;
+    defer resource.deinit(allocator);
+    {
+        const w = resource.writer(allocator);
+        try writef_kv(w, 1, .{
+            .@"telemetry.sdk.name" = "github.com/nektro/zig-tracer",
+            .@"telemetry.sdk.version" = "(hash)",
+            .@"telemetry.sdk.language" = "zig",
+            .@"service.name" = root.otel_service_name,
+            .@"os.type" = "linux",
+        });
+        try writef_varint(w, 2, 0);
+    }
+    var resource_spans: std.ArrayListUnmanaged(u8) = .empty;
+    defer resource_spans.deinit(allocator);
+    {
+        const w = resource_spans.writer(allocator);
+        try writef_len(w, 1, resource.items.len);
+        try w.writeAll(resource.items);
+        resource.clearAndFree(allocator);
+        try writef_len(w, 2, scope_spans.items.len);
+        try w.writeAll(scope_spans.items);
+        scope_spans.clearAndFree(allocator);
+    }
+    var export_request: std.ArrayListUnmanaged(u8) = .empty;
+    defer export_request.deinit(allocator);
+    {
+        const w = export_request.writer(allocator);
+        try writef_len(w, 1, resource_spans.items.len);
+        try w.writeAll(resource_spans.items);
+        resource_spans.clearAndFree(allocator);
+    }
+    {
+        var client: std.http.Client = .{ .allocator = allocator };
+        defer client.deinit();
+        var buf: [4096]u8 = @splat(0);
+        var req = try client.open(.POST, traces_endpoint, .{
+            .server_header_buffer = &buf,
+            .headers = .{
+                .content_type = .{ .override = "application/x-protobuf" },
+            },
+            .redirect_behavior = .not_allowed,
+        });
+        defer req.deinit();
+        req.transfer_encoding = .{ .content_length = export_request.items.len };
+        try req.send();
+        try req.writeAll(export_request.items);
+        try req.finish();
+        try req.wait();
+    }
 }
 
 pub fn trace_begin(src: std.builtin.SourceLocation, comptime ifmt: []const u8, iargs: anytype) Data {
@@ -119,16 +195,16 @@ pub fn trace_end(ctx: tracer.Ctx) void {
 }
 fn trace_end_inner(ctx: tracer.Ctx) !void {
     var temp: std.ArrayListUnmanaged(u8) = .empty;
-    defer temp.deinit(allocator);
     const w = temp.writer(allocator);
+    defer if (ctx.data.name.len > 0) allocator.free(ctx.data.name);
     try writef_bytes(w, 1, &trace_id);
     try writef_bytes(w, 2, &ctx.data.span_id);
+    try writef_string(w, 3, "");
     if (ctx.data.parent_id) |*pi| try writef_bytes(w, 4, pi);
     try writef_string(w, 5, ctx.data.name);
-    if (ctx.data.name.len > 0) allocator.free(ctx.data.name);
     try writef_varint(w, 6, 2);
-    try writef_varint(w, 7, ctx.data.time_start_ns);
-    try writef_varint(w, 8, @intCast(time.nanoTimestamp()));
+    try writef_i64(w, 7, @floatFromInt(ctx.data.time_start_ns));
+    try writef_i64(w, 8, @floatFromInt(time.nanoTimestamp()));
     try spans.append(allocator, temp.items);
 }
 
@@ -296,4 +372,38 @@ fn writef_string(w: anytype, nr: u64, bs: []const u8) !void {
 fn writef_varint(w: anytype, nr: u64, i: u64) !void {
     try write_tag(w, nr, .varint);
     try write_varint(w, i);
+}
+
+fn writef_len(w: anytype, nr: u64, l: u64) !void {
+    try write_tag(w, nr, .len);
+    try write_varint(w, l);
+}
+
+// https://opentelemetry.io/docs/specs/semconv/registry/attributes/
+fn writef_kv(w: anytype, nr: u64, kvs: anytype) !void {
+    var temp: std.ArrayListUnmanaged(u8) = .empty;
+    defer temp.deinit(allocator);
+    const x = temp.writer(allocator);
+
+    var temp2: std.ArrayListUnmanaged(u8) = .empty;
+    defer temp2.deinit(allocator);
+    const y = temp2.writer(allocator);
+
+    inline for (comptime std.meta.fields(@TypeOf(kvs))) |field| {
+        try writef_string(x, 1, field.name);
+
+        try writef_string(y, 1, @field(kvs, field.name));
+        try writef_len(x, 2, temp2.items.len);
+        try x.writeAll(temp2.items);
+        temp2.clearRetainingCapacity();
+
+        try writef_len(w, nr, temp.items.len);
+        try w.writeAll(temp.items);
+        temp.clearRetainingCapacity();
+    }
+}
+
+fn writef_i64(w: anytype, nr: u64, i: f64) !void {
+    try write_tag(w, nr, .i64);
+    try w.writeAll(&std.mem.toBytes((i)));
 }
