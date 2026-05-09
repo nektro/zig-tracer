@@ -178,6 +178,7 @@ pub fn trace_begin(src: std.builtin.SourceLocation, comptime ifmt: []const u8, i
 
 pub fn trace_end(ctx: tracer.Ctx) void {
     trace_end_inner(ctx) catch {};
+    prev_span_id = ctx.data.parent_id;
 }
 fn trace_end_inner(ctx: tracer.Ctx) !void {
     var temp: std.ArrayListUnmanaged(u8) = .empty;
