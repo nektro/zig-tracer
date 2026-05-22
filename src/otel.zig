@@ -52,7 +52,7 @@ pub fn deinit() void {
 
 threadlocal var allocator: std.mem.Allocator = undefined;
 threadlocal var traces_endpoint: std.Uri = undefined;
-threadlocal var trace_id: [16]u8 = undefined;
+pub threadlocal var trace_id: [16]u8 = undefined;
 threadlocal var prev_span_id: ?[8]u8 = undefined;
 threadlocal var spans: std.ArrayListUnmanaged([]const u8) = .empty;
 
