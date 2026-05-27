@@ -27,7 +27,7 @@ pub fn init_thread(args: struct { nfs.Dir }) !void {
     const dir = args[0];
     tid = linux.gettid();
 
-    path = try std.fmt.allocPrintZ(alloc, "trace.{d}.{d}.chrome.json", .{ pid, tid });
+    path = try nio.fmt.allocPrintZ(alloc, "trace.{d}.{d}.chrome.json", .{ pid, tid });
     file = try dir.createFile(path, .{});
     buffered_writer = .init(file);
 
