@@ -3,7 +3,7 @@ const deps = @import("./deps.zig");
 
 pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
-    const mode = b.option(std.builtin.Mode, "mode", "") orelse .Debug;
+    const mode = b.option(std.builtin.OptimizeMode, "mode", "") orelse .Debug;
     const disable_llvm = b.option(bool, "disable_llvm", "use the non-llvm zig codegen") orelse false;
 
     const mod = b.addModule("tracer", .{ .root_source_file = b.path("src/mod.zig") });
@@ -18,7 +18,7 @@ pub fn build(b: *std.Build) void {
     test_step.dependOn(b.getInstallStep());
 }
 
-fn addTest(b: *std.Build, target: std.Build.ResolvedTarget, mode: std.builtin.Mode, disable_llvm: bool, mod: *std.Build.Module, comptime backend: u8) void {
+fn addTest(b: *std.Build, target: std.Build.ResolvedTarget, mode: std.builtin.OptimizeMode, disable_llvm: bool, mod: *std.Build.Module, comptime backend: u8) void {
     _ = mod;
     const options = b.addOptions();
     options.addOption(u8, "backend", backend);
@@ -26,9 +26,11 @@ fn addTest(b: *std.Build, target: std.Build.ResolvedTarget, mode: std.builtin.Mo
 
     const exe = b.addExecutable(.{
         .name = "test" ++ std.fmt.comptimePrint("{d}", .{backend}),
-        .root_source_file = b.path("src/main.zig"),
-        .target = target,
-        .optimize = mode,
+        .root_module = b.createModule(.{
+            .root_source_file = b.path("src/main.zig"),
+            .target = target,
+            .optimize = mode,
+        }),
     });
     deps.addAllTo(exe);
     exe.linkLibC();
