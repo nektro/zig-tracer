@@ -10,6 +10,3 @@ MPL-2.0:
 = https://spdx.org/licenses/MPL-2.0
 - git https://github.com/nektro/zig-nfs
 - git https://github.com/nektro/zig-nio
-
-Unspecified:
-- system_lib c
