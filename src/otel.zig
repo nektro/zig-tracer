@@ -141,21 +141,16 @@ fn deinit_thread_inner() !void {
     {
         var client: std.http.Client = .{ .allocator = allocator };
         defer client.deinit();
-        var buf: [4096]u8 = @splat(0);
-        var req = try client.open(.POST, traces_endpoint, .{
-            .server_header_buffer = &buf,
+        var req = try client.request(.POST, traces_endpoint, .{
             .headers = .{
                 .content_type = .{ .override = "application/x-protobuf" },
             },
             .redirect_behavior = .not_allowed,
         });
         defer req.deinit();
-        req.transfer_encoding = .{ .content_length = export_request.items.len };
-        try req.send();
-        try req.writeAll(export_request.items);
-        try req.finish();
-        try req.wait();
-        if (req.response.status != .ok) std.log.scoped(.tracer).warn("otel: {s} {d}", .{ &extras.to_hex(trace_id), req.response.status });
+        try req.sendBodyComplete(export_request.items);
+        const resp = try req.receiveHead(&.{});
+        if (resp.head.status != .ok) std.log.scoped(.tracer).warn("otel: {s} {d}", .{ &extras.to_hex(trace_id), resp.head.status });
     }
 }
 
