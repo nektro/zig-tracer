@@ -68,7 +68,7 @@ pub threadlocal var @"url.query": ?[]const u8 = null;
 
 pub fn init_thread(args: struct { std.mem.Allocator, std.Uri }) !void {
     allocator, traces_endpoint = args;
-    trace_id = extras.randomBytes(16);
+    trace_id = nio.randomBytes(16);
     prev_span_id = null;
 }
 
@@ -77,31 +77,31 @@ pub fn deinit_thread() void {
     spans.clearAndFree(allocator);
 }
 fn deinit_thread_inner() !void {
-    var instrumentation_scope: std.ArrayListUnmanaged(u8) = .empty;
-    defer instrumentation_scope.deinit(allocator);
+    var instrumentation_scope: nio.AllocatingWriter = .init(allocator);
+    defer instrumentation_scope.deinit();
     {
-        const w = instrumentation_scope.writer(allocator);
+        const w = &instrumentation_scope;
         try writef_string(w, 1, "github.com/nektro/zig-tracer");
         try writef_string(w, 2, "(hash)");
         try writef_len(w, 3, 0);
         try writef_varint(w, 4, 0);
     }
-    var scope_spans: std.ArrayListUnmanaged(u8) = .empty;
-    defer scope_spans.deinit(allocator);
+    var scope_spans: nio.AllocatingWriter = .init(allocator);
+    defer scope_spans.deinit();
     {
-        const w = scope_spans.writer(allocator);
+        const w = &scope_spans;
         try writef_len(w, 1, instrumentation_scope.items.len);
         try w.writeAll(instrumentation_scope.items);
-        instrumentation_scope.clearAndFree(allocator);
+        instrumentation_scope.clearAndFree();
         for (spans.items) |sp| {
             try writef_len(w, 2, sp.len);
             try w.writeAll(sp);
         }
     }
-    var resource: std.ArrayListUnmanaged(u8) = .empty;
-    defer resource.deinit(allocator);
+    var resource: nio.AllocatingWriter = .init(allocator);
+    defer resource.deinit();
     {
-        const w = resource.writer(allocator);
+        const w = &resource;
         try writef_kv(w, 1, .{
             .@"telemetry.sdk.name" = "github.com/nektro/zig-tracer",
             .@"telemetry.sdk.version" = "(hash)",
@@ -119,27 +119,28 @@ fn deinit_thread_inner() !void {
         });
         try writef_varint(w, 2, 0);
     }
-    var resource_spans: std.ArrayListUnmanaged(u8) = .empty;
-    defer resource_spans.deinit(allocator);
+    var resource_spans: nio.AllocatingWriter = .init(allocator);
+    defer resource_spans.deinit();
     {
-        const w = resource_spans.writer(allocator);
+        const w = &resource_spans;
         try writef_len(w, 1, resource.items.len);
         try w.writeAll(resource.items);
-        resource.clearAndFree(allocator);
+        resource.clearAndFree();
         try writef_len(w, 2, scope_spans.items.len);
         try w.writeAll(scope_spans.items);
-        scope_spans.clearAndFree(allocator);
+        scope_spans.clearAndFree();
     }
-    var export_request: std.ArrayListUnmanaged(u8) = .empty;
-    defer export_request.deinit(allocator);
+    var export_request: nio.AllocatingWriter = .init(allocator);
+    defer export_request.deinit();
     {
-        const w = export_request.writer(allocator);
+        const w = &export_request;
         try writef_len(w, 1, resource_spans.items.len);
         try w.writeAll(resource_spans.items);
-        resource_spans.clearAndFree(allocator);
+        resource_spans.clearAndFree();
     }
     {
-        var client: std.http.Client = .{ .allocator = allocator };
+        const io = root.io;
+        var client: std.http.Client = .{ .allocator = allocator, .io = io };
         defer client.deinit();
         var req = try client.request(.POST, traces_endpoint, .{
             .headers = .{
@@ -155,7 +156,7 @@ fn deinit_thread_inner() !void {
 }
 
 pub fn trace_begin(src: std.builtin.SourceLocation, comptime ifmt: []const u8, iargs: anytype) Data {
-    const span_id = extras.randomBytes(8);
+    const span_id = nio.randomBytes(8);
     const parent_id = prev_span_id;
     prev_span_id = span_id;
     const fmt = "{s}:{d}:{d} ({s})" ++ ifmt;
@@ -176,8 +177,8 @@ pub fn trace_end(ctx: tracer.Ctx) void {
     prev_span_id = ctx.data.parent_id;
 }
 fn trace_end_inner(ctx: tracer.Ctx) !void {
-    var temp: std.ArrayListUnmanaged(u8) = .empty;
-    const w = temp.writer(allocator);
+    var temp: nio.AllocatingWriter = .init(allocator);
+    const w = &temp;
     defer if (ctx.data.name.len > 0) allocator.free(ctx.data.name);
     try writef_bytes(w, 1, &trace_id);
     try writef_bytes(w, 2, &ctx.data.span_id);
@@ -258,13 +259,13 @@ fn writef_len(w: anytype, nr: u64, l: u64) !void {
 
 // https://opentelemetry.io/docs/specs/semconv/registry/attributes/
 fn writef_kv(w: anytype, nr: u64, kvs: anytype) !void {
-    var temp: std.ArrayListUnmanaged(u8) = .empty;
-    defer temp.deinit(allocator);
-    const x = temp.writer(allocator);
+    var temp: nio.AllocatingWriter = .init(allocator);
+    defer temp.deinit();
+    const x = &temp;
 
-    var temp2: std.ArrayListUnmanaged(u8) = .empty;
-    defer temp2.deinit(allocator);
-    const y = temp2.writer(allocator);
+    var temp2: nio.AllocatingWriter = .init(allocator);
+    defer temp2.deinit();
+    const y = &temp2;
 
     inline for (comptime std.meta.fields(@TypeOf(kvs))) |field| blk: {
         const value = @field(kvs, field.name);
@@ -275,11 +276,11 @@ fn writef_kv(w: anytype, nr: u64, kvs: anytype) !void {
         try writef_kv_v(y, value);
         try writef_len(x, 2, temp2.items.len);
         try x.writeAll(temp2.items);
-        temp2.clearRetainingCapacity();
+        temp2.items.len = 0;
 
         try writef_len(w, nr, temp.items.len);
         try w.writeAll(temp.items);
-        temp.clearRetainingCapacity();
+        temp.items.len = 0;
     }
 }
 fn writef_kv_v(w: anytype, v: anytype) !void {

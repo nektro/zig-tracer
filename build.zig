@@ -33,7 +33,7 @@ fn addTest(b: *std.Build, target: std.Build.ResolvedTarget, mode: std.builtin.Op
         }),
     });
     deps.addAllTo(exe);
-    exe.linkLibC();
+    exe.root_module.link_libc = true;
     exe.root_module.addImport("build_options", options.createModule());
     exe.use_llvm = !disable_llvm;
     exe.use_lld = !disable_llvm;

@@ -8,7 +8,15 @@ pub const tracer_backend: tracer.Backend = @enumFromInt(build_options.backend);
 pub const otel_service_name = "zig-tracer test";
 pub const otel_service_version = build_options.version;
 
+pub var io: std.Io = undefined;
+
 pub fn main() !void {
+    const allocator = std.heap.c_allocator;
+
+    var threaded: std.Io.Threaded = .init(allocator, .{});
+    defer threaded.deinit();
+    io = threaded.io();
+
     try tracer.init(.{});
     defer tracer.deinit();
 
