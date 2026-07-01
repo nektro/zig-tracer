@@ -51,7 +51,7 @@ pub fn deinit() void {
 }
 
 threadlocal var allocator: std.mem.Allocator = undefined;
-threadlocal var traces_endpoint: std.Uri = undefined;
+threadlocal var traces_endpoint: ?std.Uri = null;
 pub threadlocal var trace_id: [16]u8 = undefined;
 threadlocal var prev_span_id: ?[8]u8 = undefined;
 threadlocal var spans: std.ArrayListUnmanaged([]const u8) = .empty;
@@ -66,7 +66,7 @@ pub threadlocal var @"http.route": ?[]const u8 = null;
 pub threadlocal var @"url.path": ?[]const u8 = null;
 pub threadlocal var @"url.query": ?[]const u8 = null;
 
-pub fn init_thread(args: struct { std.mem.Allocator, std.Uri }) !void {
+pub fn init_thread(args: struct { std.mem.Allocator, ?std.Uri }) !void {
     allocator, traces_endpoint = args;
     trace_id = nio.randomBytes(16);
     prev_span_id = null;
@@ -77,6 +77,7 @@ pub fn deinit_thread() void {
     spans.clearAndFree(allocator);
 }
 fn deinit_thread_inner() !void {
+    if (traces_endpoint == null) return;
     var instrumentation_scope: nio.AllocatingWriter = .init(allocator);
     defer instrumentation_scope.deinit();
     {
@@ -142,7 +143,7 @@ fn deinit_thread_inner() !void {
         const io = root.io;
         var client: std.http.Client = .{ .allocator = allocator, .io = io };
         defer client.deinit();
-        var req = try client.request(.POST, traces_endpoint, .{
+        var req = try client.request(.POST, traces_endpoint.?, .{
             .headers = .{
                 .content_type = .{ .override = "application/x-protobuf" },
             },
@@ -161,7 +162,7 @@ pub fn trace_begin(src: std.builtin.SourceLocation, comptime ifmt: []const u8, i
     prev_span_id = span_id;
     const fmt = "{s}:{d}:{d} ({s})" ++ ifmt;
     const args = .{ src.file, src.line, src.column, src.fn_name } ++ iargs;
-    const name = std.fmt.allocPrint(allocator, fmt, args) catch "";
+    const name = if (traces_endpoint == null) "" else std.fmt.allocPrint(allocator, fmt, args) catch "";
     const time_start_ns: u64 = @intCast(time.nanoTimestamp()); // this will overflow 2554 July 21 23:34:33.709 Z
 
     return .{
@@ -177,6 +178,7 @@ pub fn trace_end(ctx: tracer.Ctx) void {
     prev_span_id = ctx.data.parent_id;
 }
 fn trace_end_inner(ctx: tracer.Ctx) !void {
+    if (traces_endpoint == null) return;
     var temp: nio.AllocatingWriter = .init(allocator);
     const w = &temp;
     defer if (ctx.data.name.len > 0) allocator.free(ctx.data.name);
