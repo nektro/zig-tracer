@@ -180,6 +180,7 @@ pub fn trace_end(ctx: tracer.Ctx) void {
 fn trace_end_inner(ctx: tracer.Ctx) !void {
     if (traces_endpoint == null) return;
     var temp: nio.AllocatingWriter = .init(allocator);
+    defer temp.deinit();
     const w = &temp;
     defer if (ctx.data.name.len > 0) allocator.free(ctx.data.name);
     try writef_bytes(w, 1, &trace_id);
@@ -191,7 +192,7 @@ fn trace_end_inner(ctx: tracer.Ctx) !void {
     try writef_i64(w, 7, (ctx.data.time_start_ns));
     try writef_i64(w, 8, @intCast(time.nanoTimestamp()));
     if (ctx.data.parent_id == null) try writef_kv(w, 9, .{ .@"url.path" = @"url.path", .@"url.query" = @"url.query" });
-    try spans.append(allocator, temp.items);
+    try spans.append(allocator, try temp.toOwnedSlice());
 }
 
 pub const Data = struct {
