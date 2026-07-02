@@ -41,7 +41,7 @@ pub fn deinit_thread() void {
     buffered_writer.flush() catch {};
 }
 
-pub inline fn trace_begin(src: std.builtin.SourceLocation, comptime ifmt: []const u8, iargs: anytype) void {
+pub fn trace_begin(src: std.builtin.SourceLocation, comptime ifmt: []const u8, iargs: anytype) void {
     const fmt = "{s}:{d}:{d} ({s})" ++ ifmt;
     const args = .{ src.file, src.line, src.column, src.fn_name };
     buffered_writer.writeStruct(BeginEvent{
@@ -54,7 +54,7 @@ pub inline fn trace_begin(src: std.builtin.SourceLocation, comptime ifmt: []cons
     buffered_writer.print(fmt, args ++ iargs) catch return;
 }
 
-pub inline fn trace_end(ctx: tracer.Ctx) void {
+pub fn trace_end(ctx: tracer.Ctx) void {
     _ = ctx;
     buffered_writer.writeStruct(EndEvent{
         .pid = @intCast(pid),

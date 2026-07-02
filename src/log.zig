@@ -14,11 +14,11 @@ pub fn init_thread(args: struct {}) !void {
 
 pub fn deinit_thread() void {}
 
-pub inline fn trace_begin(src: std.builtin.SourceLocation, comptime ifmt: []const u8, iargs: anytype) void {
+pub fn trace_begin(src: std.builtin.SourceLocation, comptime ifmt: []const u8, iargs: anytype) void {
     log.debug("{s}:{d}:{d} ({s})" ++ ifmt, .{ src.file, src.line, src.column, src.fn_name } ++ iargs);
 }
 
-pub inline fn trace_end(ctx: tracer.Ctx) void {
+pub fn trace_end(ctx: tracer.Ctx) void {
     _ = ctx;
 }
 

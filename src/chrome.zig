@@ -42,7 +42,7 @@ pub fn deinit_thread() void {
     buffered_writer.flush() catch {};
 }
 
-pub inline fn trace_begin(src: std.builtin.SourceLocation, comptime ifmt: []const u8, iargs: anytype) void {
+pub fn trace_begin(src: std.builtin.SourceLocation, comptime ifmt: []const u8, iargs: anytype) void {
     buffered_writer.print(
         \\{{"cat":"function", "name":"{s}:{d}:{d} ({s})
     ++ ifmt ++
@@ -62,7 +62,7 @@ pub inline fn trace_begin(src: std.builtin.SourceLocation, comptime ifmt: []cons
     ) catch {};
 }
 
-pub inline fn trace_end(ctx: tracer.Ctx) void {
+pub fn trace_end(ctx: tracer.Ctx) void {
     _ = ctx;
     buffered_writer.print(
         \\{{"cat":"function", "ph": "E", "pid": {d}, "tid": {d}, "ts": {d}}},

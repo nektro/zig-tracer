@@ -45,7 +45,7 @@ pub fn deinit_thread() void {
     started = false;
 }
 
-pub inline fn trace(src: std.builtin.SourceLocation, comptime fmt: []const u8, args: anytype) Ctx {
+pub fn trace(src: std.builtin.SourceLocation, comptime fmt: []const u8, args: anytype) Ctx {
     return .{
         .src = src,
         .data = if (!started) undefined else impl.trace_begin(src, fmt, args),
@@ -56,7 +56,7 @@ pub const Ctx = struct {
     src: std.builtin.SourceLocation,
     data: impl.Data,
 
-    pub inline fn end(self: Ctx) void {
+    pub fn end(self: Ctx) void {
         if (!started) return;
         impl.trace_end(self);
     }
