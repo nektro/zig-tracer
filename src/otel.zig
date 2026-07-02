@@ -162,7 +162,7 @@ pub fn trace_begin(src: std.builtin.SourceLocation, comptime ifmt: []const u8, i
     prev_span_id = span_id;
     const fmt = "{s}:{d}:{d} ({s})" ++ ifmt;
     const args = .{ src.file, src.line, src.column, src.fn_name } ++ iargs;
-    const name = if (traces_endpoint == null) "" else std.fmt.allocPrint(allocator, fmt, args) catch "";
+    const name = if (traces_endpoint == null) "" else nio.fmt.allocPrint(allocator, fmt, args) catch "";
     const time_start_ns: u64 = @intCast(time.nanoTimestamp()); // this will overflow 2554 July 21 23:34:33.709 Z
 
     return .{
