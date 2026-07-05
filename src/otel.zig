@@ -44,6 +44,8 @@ pub fn init(args: struct {}) !void {
             break;
         }
     }
+    if (@"os.version" == null) std.log.warn("/etc/os-release did not contain a VERSION_ID field", .{});
+    if (@"os.name" == null) std.log.warn("/etc/os-release did not contain a NAME field", .{});
 }
 
 pub fn deinit() void {
