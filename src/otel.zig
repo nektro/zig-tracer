@@ -216,7 +216,7 @@ const WireType = enum {
 fn write_tag(w: anytype, nr: u64, ty: WireType) !void {
     var _nr = nr;
     _nr <<= 3;
-    _nr |= @intFromEnum(ty);
+    _nr |= @backingInt(ty);
     return write_varint(w, _nr);
 }
 
@@ -272,11 +272,11 @@ fn writef_kv(w: anytype, nr: u64, kvs: anytype) !void {
     defer temp2.deinit();
     const y = &temp2;
 
-    inline for (comptime std.meta.fields(@TypeOf(kvs))) |field| blk: {
-        const value = @field(kvs, field.name);
+    inline for (comptime std.meta.fieldNames(@TypeOf(kvs))) |field| blk: {
+        const value = @field(kvs, field);
         if (@typeInfo(@TypeOf(value)) == .optional and value == null) break :blk;
 
-        try writef_string(x, 1, field.name);
+        try writef_string(x, 1, field);
 
         try writef_kv_v(y, value);
         try writef_len(x, 2, temp2.items.len);

@@ -27,7 +27,7 @@ pub const Backend = enum {
 
 threadlocal var started = false;
 
-pub fn init(args: @typeInfo(@TypeOf(impl.init)).@"fn".params[0].type.?) !void {
+pub fn init(args: @typeInfo(@TypeOf(impl.init)).@"fn".param_types[0].?) !void {
     try impl.init(args);
 }
 
@@ -35,7 +35,7 @@ pub fn deinit() void {
     impl.deinit();
 }
 
-pub fn init_thread(args: @typeInfo(@TypeOf(impl.init_thread)).@"fn".params[0].type.?) !void {
+pub fn init_thread(args: @typeInfo(@TypeOf(impl.init_thread)).@"fn".param_types[0].?) !void {
     try impl.init_thread(args);
     started = true;
 }
