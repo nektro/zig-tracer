@@ -4,7 +4,7 @@ const nfs = @import("nfs");
 
 pub const build_options = @import("build_options");
 
-pub const tracer_backend: tracer.Backend = @enumFromInt(build_options.backend);
+pub const tracer_backend: tracer.Backend = @fromBackingInt(@intCast(build_options.backend));
 pub const otel_service_name = "zig-tracer test";
 pub const otel_service_version = build_options.version;
 
