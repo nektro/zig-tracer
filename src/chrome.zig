@@ -6,7 +6,7 @@ const root = @import("root");
 const nfs = @import("nfs");
 const nio = @import("nio");
 const time = @import("time");
-const linux = @import("sys-linux");
+const linux = @import("sys").linux;
 
 var pid: linux.pid_t = undefined;
 threadlocal var tid: linux.pid_t = undefined;
